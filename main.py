@@ -97,49 +97,123 @@ def avaliarPedido(usr):
     os.system(limparTela)
     print("--------------- Avaliar Pedido -----------------")
     print("Nome : ",usr["nome"])
-    # print("Total de avaliações: ",len(pedido["avaliacao"]))
+    mostrarPedidosDoUsuario(usr)
+    possui = verificarSePossuiPedidos(usr)
+    if possui == False:
+        print("Você não possui pedidos para avaliar...")
+        input("Pressione QUALQUER tecla para voltar a tela home\n")
+        return "finalizado"
+
+    idPedido = input("Informe o ID do pedido que deseja avaliar: \n")
     for pedido in pedidos:
-        # print(pedido) -> print pedidos de todos os usuarios
         if pedido["usuario"] == usr["usuario"]: # usuario que tem o acesso
-            print(pedido["itens"])
-            
-    input()
+            if str(pedido["id"]) == idPedido:
+                avaliacao = input("Informe sua avaliação para o pedido (de 1 a 5 estrelas): \n")
+                pedido["avaliacao"] = avaliacao
+                print("Avaliação registrada com sucesso!")
+                input("Pressione QUALQUER tecla para voltar a tela home\n")
+                return "finalizado"
+
 
 def mostrarPedidosDoUsuario(usr):
     for pedido in pedidos:
         if pedido["usuario"] == usr["usuario"]:
+            print("--------------- Pedido -----------------")
             print("ID: ",pedido["id"]," Itens: ",pedido["itens"]," Total: ",pedido["total"])
 
+def verificarSePossuiPedidos(usr):
+    for pedido in pedidos:
+        if pedido["usuario"] == usr["usuario"]:
+            return True
+    return False
+
 def excluirPedido(usr):
-    pass
+    os.system(limparTela)
+    pedidoExcluido = False
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|             EXCLUIR PEDIDO             |")
+    print("|________________________________________|\n")
+    while pedidoExcluido == False:
+        os.system(limparTela)
+        mostrarPedidosDoUsuario(usr)
+        possuiPedidos = verificarSePossuiPedidos(usr)
+        if possuiPedidos == False:
+            print("Você não possui pedidos para excluir...")
+            input("Pressione QUALQUER tecla para voltar a tela home\n")
+            break
+
+        idPedido = input("Informe o ID do pedido que deseja excluir: \n")
+
+        for pedido in pedidos:
+            if str(pedido["id"]) == idPedido and pedido["usuario"] == usr["usuario"]:
+                pedidos.remove(pedido)
+                pedidoExcluido = True
+                print("Pedido excluído com sucesso!")
+                input("Pressione QUALQUER tecla para voltar a tela home\n")
+                break
+
+        if pedidoExcluido == False:
+            print("Pedido não encontrado, tente novamente...")
+            time.sleep(1)
 
 def editarPedido(usr):
     os.system(limparTela)
-    edicaoFinalizado = False
+    edicaoFinalizada = False
     print(" ________________________________________ ")
     print("|                                        |")
     print("|             EDITAR PEDIDO              |")
     print("|________________________________________|\n")
-    while edicaoFinalizado == False:
+    while edicaoFinalizada == False:
         os.system(limparTela)
         mostrarPedidosDoUsuario(usr)
+        possuiPedidos = verificarSePossuiPedidos(usr)
+        if possuiPedidos == False:
+            print("Você não possui pedidos para editar...")
+            input("Pressione QUALQUER tecla para voltar a tela home\n")
+            break
+
         idPedido = input("Informe o ID do pedido que deseja editar: \n")
+
         for pedido in pedidos:
             if str(pedido["id"]) == idPedido and pedido["usuario"] == usr["usuario"]:
                 print("Pedido encontrado: ",pedido)
-                novoItem = input("Informe o nome do novo alimento a ser adicionado: \n")
-                alimentoExiste = verificarSeAlimentoExisteNoBanco(novoItem)
-                if alimentoExiste == True:
-                    pedido["itens"].append(novoItem)
-                    for alimento in alimentos:
-                        if alimento["nome"] == novoItem:
-                            pedido["total"] += alimento["preco"]
+                print("1) Adicionar item")
+                print("2) Remover item")
+                print("3) Voltar")
+                decisao = input("\nO que deseja fazer?\n")
+                if decisao == "1":
+                    novoItem = input("Informe o nome do novo alimento a ser adicionado: \n")
+                    alimentoExiste = verificarSeAlimentoExisteNoBanco(novoItem)
+                    if alimentoExiste == True:
+                        pedido["itens"].append(novoItem)
+                        for alimento in alimentos:
+                            if alimento["nome"] == novoItem:
+                                pedido["total"] += alimento["preco"]
                     print("Pedido atualizado com sucesso: ",pedido)
-                    edicaoFinalizado = True
+                    edicaoFinalizada = True
                     input("Pressione QUALQUER tecla para voltar a tela home\n")
+                elif decisao == "2":
+                    alimentoParaRemover = input("Informe o nome do alimento a ser removido: \n")
+                    if alimentoParaRemover in pedido["itens"]:
+                        pedido["itens"].remove(alimentoParaRemover)
+                        for alimento in alimentos:
+                            if alimento["nome"] == alimentoParaRemover:
+                                pedido["total"] -= alimento["preco"]
+                        print(f"Pedido {pedido["id"]} atualizado com sucesso: ")
+                    else:
+                        print("Item não encontrado no pedido.")
+                    edicaoFinalizada = True
+                    input("Pressione QUALQUER tecla para voltar a tela home\n")
+                    
+                elif decisao == "3":
+                    edicaoFinalizada = True
+                    break
                 else:
-                    print("Alimento não encontrado no banco de dados, tente novamente...")
-        if edicaoFinalizado == False:
+                    print("Opção inválida, tente novamente...")
+                    time.sleep(1)    
+
+        if edicaoFinalizada == False:
             print("Pedido não encontrado, tente novamente...")
 
 # função recursiva para finalizar o pedido
@@ -217,7 +291,7 @@ def listarAlimentos():
     print("__________________________________________")
     print("|                                        |")
     print("|           LISTA DE ALIMENTOS           |")
-    print("|________________________________________|")
+    print("|________________________________________|\n")
 
     for alimento in alimentos:
         print("|     Nome : ",alimento["nome"], " Categoria: ", alimento["categoria"], " Preço: ",alimento["preco"])
@@ -229,7 +303,7 @@ def listarAlimentosBuscados(usr):
     print("__________________________________________")
     print("|                                        |")
     print("|        ALIMENTOS BUSCADOS              |")
-    print("|________________________________________|")
+    print("|________________________________________|\n")
     print("|     Usuario : ",usr["usuario"])
 
     for busca in alimentosBuscados:
@@ -245,7 +319,7 @@ def buscarAlimento(nomeUsuario,nomeAlimento):
     print("__________________________________________")
     print("|                                        |")
     print("|             BUSCAR ALIMENTO            |")
-    print("|________________________________________|")
+    print("|________________________________________|\n")
     
     for alimento in alimentos:
         if alimento["nome"] in nomeAlimento:
@@ -296,7 +370,7 @@ def telaHome(usr): # dicionario do usuario que acessou
                 print("3) Excluir Pedido")
                 print("4) Voltar")
 
-                decisao = input("O que deseja fazer?\n")
+                decisao = input("\nO que deseja fazer?\n")
                 if decisao == "1":
                     cadastrarPedido(usr)
                     break
