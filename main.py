@@ -61,6 +61,17 @@ def telamenuHome(usr):
     print("4) Avaliar pedido")
     print("5) Logout")
 
+def menuHomePedidos(usr):
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|              MEUS PEDIDOS              |")
+    print("|________________________________________|\n")
+    print("Pedidos de ",usr["usuario"],"\n")
+    print("1) Visualizar pedidos")
+    print("2) Cadastrar pedido")
+    print("3) Editar pedido")
+    print("4) Excluir pedido")
+    print("5) Voltar")
 
                 
 def verificarSeAlimentoExisteNoBanco(nomeAlimento):
@@ -97,7 +108,7 @@ def avaliarPedido(usr):
     os.system(limparTela)
     print("--------------- Avaliar Pedido -----------------")
     print("Nome : ",usr["nome"])
-    mostrarPedidosDoUsuario(usr)
+    mostrarPedidos(usr)
     possui = verificarSePossuiPedidos(usr)
     if possui == False:
         print("Você não possui pedidos para avaliar...")
@@ -115,11 +126,12 @@ def avaliarPedido(usr):
                 return "finalizado"
 
 
-def mostrarPedidosDoUsuario(usr):
+def mostrarPedidos(usr):
     for pedido in pedidos:
         if pedido["usuario"] == usr["usuario"]:
             print("--------------- Pedido -----------------")
             print("ID: ",pedido["id"]," Itens: ",pedido["itens"]," Total: ",pedido["total"])
+    print(f"{len(pedidos)} pedidos encontrados")
 
 def verificarSePossuiPedidos(usr):
     for pedido in pedidos:
@@ -136,7 +148,7 @@ def excluirPedido(usr):
     print("|________________________________________|\n")
     while pedidoExcluido == False:
         os.system(limparTela)
-        mostrarPedidosDoUsuario(usr)
+        mostrarPedidos(usr)
         possuiPedidos = verificarSePossuiPedidos(usr)
         if possuiPedidos == False:
             print("Você não possui pedidos para excluir...")
@@ -166,7 +178,7 @@ def editarPedido(usr):
     print("|________________________________________|\n")
     while edicaoFinalizada == False:
         os.system(limparTela)
-        mostrarPedidosDoUsuario(usr)
+        mostrarPedidos(usr)
         possuiPedidos = verificarSePossuiPedidos(usr)
         if possuiPedidos == False:
             print("Você não possui pedidos para editar...")
@@ -260,7 +272,7 @@ def cadastrarPedido(usr):
                 for alimento in alimentos:
                     for itemUsr in itens:
                         if alimento["nome"] == itemUsr:
-                            itensPedido.append(alimento["nome"])
+                            itensPedido.append(alimento)
                             totalPedido += alimento["preco"]
                 print("Itens do pedido: ",itensPedido)
                 id = len(pedidos) + 1 # para não começar em zero, adicionei 1
@@ -281,8 +293,8 @@ def cadastrarPedido(usr):
                 print("pedido realizado com sucesso")
                 #visualizarPedido()
                 input("Pressione QUALQUER tecla para voltar a tela home\n")
-            else:
-                print("Alimento não encontrado no banco de dados, tente novamente...")
+        else:
+            print("Alimento não encontrado no banco de dados, tente novamente...")
 
 
 
@@ -364,23 +376,25 @@ def telaHome(usr): # dicionario do usuario que acessou
         elif opcao == "3":
             while True:
                 os.system(limparTela)
-                print("    PEDIDOS de ",usr["usuario"],"\n")
-                print("1) Cadastrar Pedido")
-                print("2) Editar pedido")
-                print("3) Excluir Pedido")
-                print("4) Voltar")
+                menuHomePedidos(usr)
 
                 decisao = input("\nO que deseja fazer?\n")
                 if decisao == "1":
-                    cadastrarPedido(usr)
+                    mostrarPedidos(usr)
+                    input("Pressione QUALQUER tecla para voltar a tela de pedidos\n")
                     break
                 elif decisao == "2":
-                    editarPedido(usr)
+                    cadastrarPedido(usr)
                     break
                 elif decisao == "3":
-                    excluirPedido(usr)
+                    editarPedido(usr)
                     break
                 elif decisao == "4":
+                    excluirPedido(usr)
+                    break
+                elif decisao == "5":
+                    print("Voltando...")
+                    time.sleep(1)
                     break
                 else:
                     print("Informe uma opção válida!")
@@ -434,7 +448,6 @@ def CadastrarUsuario(nome, usuario, senha):
     if cadastrado == False:
         print("Cadastrando usuario...")
         time.sleep(1)
-
     user = {
         "nome": nome,
         "usuario": usuario,
