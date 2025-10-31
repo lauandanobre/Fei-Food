@@ -6,11 +6,6 @@ import time
 
 # Variaveis de escopo global
 limparTela = "clear"
-#identificar sistema operacional
-if os.name == "nt":
-    limparTela = "cls"
-else:
-    limparTela = "clear"
 
 # Lista de dicionários
 usuarios = [
@@ -62,7 +57,7 @@ def telamenuHome(usr):
     print("    BEM VINDO(A)",usr["usuario"],"\n")
     print("1) Buscar por alimento")
     print("2) Listar informações de alimentos buscados")
-    print("3) Cadastrar pedido")
+    print("3) Meus Pedidos")
     print("4) Avaliar pedido")
     print("5) Logout")
 
@@ -110,7 +105,42 @@ def avaliarPedido(usr):
             
     input()
 
+def mostrarPedidosDoUsuario(usr):
+    for pedido in pedidos:
+        if pedido["usuario"] == usr["usuario"]:
+            print("ID: ",pedido["id"]," Itens: ",pedido["itens"]," Total: ",pedido["total"])
 
+def excluirPedido(usr):
+    pass
+
+def editarPedido(usr):
+    os.system(limparTela)
+    edicaoFinalizado = False
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|             EDITAR PEDIDO              |")
+    print("|________________________________________|\n")
+    while edicaoFinalizado == False:
+        os.system(limparTela)
+        mostrarPedidosDoUsuario(usr)
+        idPedido = input("Informe o ID do pedido que deseja editar: \n")
+        for pedido in pedidos:
+            if str(pedido["id"]) == idPedido and pedido["usuario"] == usr["usuario"]:
+                print("Pedido encontrado: ",pedido)
+                novoItem = input("Informe o nome do novo alimento a ser adicionado: \n")
+                alimentoExiste = verificarSeAlimentoExisteNoBanco(novoItem)
+                if alimentoExiste == True:
+                    pedido["itens"].append(novoItem)
+                    for alimento in alimentos:
+                        if alimento["nome"] == novoItem:
+                            pedido["total"] += alimento["preco"]
+                    print("Pedido atualizado com sucesso: ",pedido)
+                    edicaoFinalizado = True
+                    input("Pressione QUALQUER tecla para voltar a tela home\n")
+                else:
+                    print("Alimento não encontrado no banco de dados, tente novamente...")
+        if edicaoFinalizado == False:
+            print("Pedido não encontrado, tente novamente...")
 
 # função recursiva para finalizar o pedido
 def finalizarPedido():
@@ -138,7 +168,7 @@ def cadastrarPedido(usr):
 
     print(" ________________________________________ ")
     print("|                                        |")
-    print("|                PEDIDO                  |")
+    print("|           CADASTRAR PEDIDO             |")
     print("|________________________________________|\n")
 
     while pedidoFinalizado == False:
@@ -183,9 +213,30 @@ def cadastrarPedido(usr):
 
 
 def listarAlimentos():
-    pass
+    os.system(limparTela)
+    print("__________________________________________")
+    print("|                                        |")
+    print("|           LISTA DE ALIMENTOS           |")
+    print("|________________________________________|")
 
+    for alimento in alimentos:
+        print("|     Nome : ",alimento["nome"], " Categoria: ", alimento["categoria"], " Preço: ",alimento["preco"])
+        print("|________________________________________|")
+    input("Pressione QUALQUER tecla para voltar a tela home\n")
 
+def listarAlimentosBuscados(usr):
+    os.system(limparTela)
+    print("__________________________________________")
+    print("|                                        |")
+    print("|        ALIMENTOS BUSCADOS              |")
+    print("|________________________________________|")
+    print("|     Usuario : ",usr["usuario"])
+
+    for busca in alimentosBuscados:
+        if busca["usuario"] == usr["usuario"]:
+            print("|     Alimentos : ", busca["alimentos"])
+    print("|________________________________________|\n")
+    input("Pressione QUALQUER tecla para voltar a tela home\n")
 
 def buscarAlimento(nomeUsuario,nomeAlimento):
     alimentoBuscado = []
@@ -213,10 +264,11 @@ def buscarAlimento(nomeUsuario,nomeAlimento):
     if alimentoExistenteNoBanco == False:
         print("Alimento não encontrado no banco de dados...")
             
-    alimentosBuscados = {
+    busca = {
         "usuario": nomeUsuario,
         "alimentos": alimentoBuscado
     }
+    alimentosBuscados.append(busca)
     input("Pressione QUALQUER tecla para voltar a tela home\n")
 
 
@@ -233,10 +285,32 @@ def telaHome(usr): # dicionario do usuario que acessou
             buscarAlimento(usr["usuario"],nomeAlimento)
         
         elif opcao == "2":
-            listarAlimentos()
+            listarAlimentosBuscados(usr)
             
         elif opcao == "3":
-            cadastrarPedido(usr)            
+            while True:
+                os.system(limparTela)
+                print("    PEDIDOS de ",usr["usuario"],"\n")
+                print("1) Cadastrar Pedido")
+                print("2) Editar pedido")
+                print("3) Excluir Pedido")
+                print("4) Voltar")
+
+                decisao = input("O que deseja fazer?\n")
+                if decisao == "1":
+                    cadastrarPedido(usr)
+                    break
+                elif decisao == "2":
+                    editarPedido(usr)
+                    break
+                elif decisao == "3":
+                    excluirPedido(usr)
+                    break
+                elif decisao == "4":
+                    break
+                else:
+                    print("Informe uma opção válida!")
+                    time.sleep(1)           
 
         elif opcao == "4":
             avaliarPedido(usr)
