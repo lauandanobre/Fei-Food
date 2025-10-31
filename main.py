@@ -1,12 +1,16 @@
 # Um software python de terminal que busca ser uma pequena
-# versão funcional do ifood, nele devo fazer pedidos de comida
-# implementando as seguntes funcionalidades:
+# versão funcional do ifood
 
 import os
 import time
 
 # Variaveis de escopo global
 limparTela = "clear"
+#identificar sistema operacional
+if os.name == "nt":
+    limparTela = "cls"
+else:
+    limparTela = "clear"
 
 # Lista de dicionários
 usuarios = [
@@ -28,18 +32,19 @@ alimentos = [
         "categoria":"italiana"
     },
     {
-        "nome":"maça",
+        "nome":"maca",
         "preco": 5,
         "categoria":"argentina"
     },
     {
-        "nome":"acarajé",
+        "nome":"acaraje",
         "preco": 15,
         "categoria":"bahiana"
     },
 ] 
 
 pedidos = [] # [{'usuario': 'lau', 'itens': [{'nome': 'pizza', 'preco': 30, 'categoria': 'italiana'}], 'total': 30, 'avaliacao': ''}]
+alimentosBuscados = [] # [{'usuario': 'lau', 'alimentos': ['pizza', 'maça']}]
 
 def telaInicio():
     print(" ________________________________________ ")
@@ -49,12 +54,49 @@ def telaInicio():
     print("1) Login")
     print("2) Cadastrar-se")
     
-def telaMenuHome():
+def telamenuHome(usr):
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|                FEI-FOOD                |")
+    print("|________________________________________|\n")
+    print("    BEM VINDO(A)",usr["usuario"],"\n")
     print("1) Buscar por alimento")
     print("2) Listar informações de alimentos buscados")
     print("3) Cadastrar pedido")
     print("4) Avaliar pedido")
     print("5) Logout")
+
+
+                
+def verificarSeAlimentoExisteNoBanco(nomeAlimento):
+    encontrado = False
+    for alimento in alimentos:
+        if alimento["nome"] == nomeAlimento:
+            encontrado = True
+    
+    return encontrado
+
+def visualizarPedido():
+    print(" ________________________________________")
+    print("|                                        ")
+    print("|                PEDIDO                  ")
+    print("|==== ALIMENTOS =========================")
+    print("|                                        ")
+
+    print(pedidos[-1])
+    pedido = pedidos[-1]
+    total = pedido["total"]
+    for item in pedido["itens"]:
+        print(f"|{item["nome"]} ------- R$ {item["preco"]}")
+
+    print("|                                        ")
+    print("|==== TOTAL =============================")
+    print("|                                        ")
+    print(f"|   {total}                              ")
+    print("|________________________________________\n")    
+    input("Pressione QUALQUER tecla para voltar a tela home\n")
+
+
 
 def avaliarPedido(usr):
     os.system(limparTela)
@@ -68,141 +110,133 @@ def avaliarPedido(usr):
             
     input()
 
-def cadastrarPedido(usr,itens):
-    #itens = ["pizza", "pizza", "maça", "acarajé"] - 4 itens
-    itensPedido = []
-    totalPedido = 0
-
-    for alimento in alimentos:
-        for item_escolhido_usr in itens:
-            if alimento["nome"] == item_escolhido_usr:
-                itensPedido.append(alimento)
-                totalPedido += alimento["preco"]
-
-    novoPedido = {
-        "usuario": usr["usuario"],
-        "itens": itensPedido,
-        "total": totalPedido,
-        "avaliacao": ""
-    }
-
-    pedidos.append(novoPedido)
-    # print(pedidos)
 
 
+# função recursiva para finalizar o pedido
+def finalizarPedido():
+    decisao = input("Deseja Adicionar outro alimento? sim(1) ou finalizar pedido?(2) \n")
+    if decisao == "1":
+        pedidoFinalizado = False
+    elif decisao == "2":
+        pedidoFinalizado = True
+    else:
+        print("Opção inválida, tente novamente...")
+        finalizarPedido()
+    return pedidoFinalizado
 
+def adicionarItensAoPedido(itens,nomeAlimento):
+    itens.append(nomeAlimento)
+    print("Itens no pedido até o momento: ")
+    print(itens)
+    print(nomeAlimento," adicionado(a) ao seu pedido.")
+
+
+def cadastrarPedido(usr):
+    os.system(limparTela)
+    pedidoFinalizado = False
+    itens = []
+
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|                PEDIDO                  |")
+    print("|________________________________________|\n")
+
+    while pedidoFinalizado == False:
+        
+        nomeAlimento = input("Informe o nome do alimento a ser adicionado no pedido:\n")
+        alimentoExiste = verificarSeAlimentoExisteNoBanco(nomeAlimento)
+        if alimentoExiste == True:# o alimento existe
+            adicionarItensAoPedido(itens, nomeAlimento)
+            finalizado = finalizarPedido()
+            if finalizado == True:
+                pedidoFinalizado = True
+                itensPedido = []
+                totalPedido = 0
+
+                for alimento in alimentos:
+                    for itemUsr in itens:
+                        if alimento["nome"] == itemUsr:
+                            itensPedido.append(alimento["nome"])
+                            totalPedido += alimento["preco"]
+                print("Itens do pedido: ",itensPedido)
+                id = len(pedidos) + 1 # para não começar em zero, adicionei 1
+
+                novoPedido = {
+                    "id": id,
+                    "usuario": usr["usuario"],
+                    "itens": itensPedido,
+                    "total": totalPedido,
+                    "avaliacao": ""
+                }
+
+                pedidos.append(novoPedido)
                 
-def verificarSeAlimentoExiste(nomeAlimento):
-    encontrado = False
-    for alimento in alimentos:
-        if alimento["nome"] == nomeAlimento:
-            encontrado = True
-    
-    return encontrado
-
-def visualizarPedido():
-    #{'usuario': 'lau', 'itens': [{'nome': 'pizza', 'preco': 30, 'categoria': 'italiana'}], 'total': 30, 'avaliacao': ''}
-    print(" ________________________________________")
-    print("|                                        ")
-    print("|                PEDIDO                  ")
-    print("|==== ALIMENTOS =========================")
-    print("|                                        ")
-
-    pedido = pedidos[-1] 
-    
-    total = pedido["total"]
-
-    for item in pedido["itens"]:
-        print("|",item['nome']," ------- R$ ",item['preco'])
-
-    print("|                                        ")
-    print("|==== TOTAL =============================")
-    print("|                                        ")
-    print("|   ",total,"                            ")
-    print("|________________________________________\n")    
+                os.system(limparTela)
+                print("Fazendo o pedido...")
+                time.sleep(1)
+                print("pedido realizado com sucesso")
+                #visualizarPedido()
+                input("Pressione QUALQUER tecla para voltar a tela home\n")
+            else:
+                print("Alimento não encontrado no banco de dados, tente novamente...")
 
 
 
-def buscarAlimento(nomeAlimento):
-    alimentosBuscados = []
+def listarAlimentos():
+    pass
+
+
+
+def buscarAlimento(nomeUsuario,nomeAlimento):
+    alimentoBuscado = []
+    alimentoExistenteNoBanco = False
     os.system(limparTela)
     print("__________________________________________")
     print("|                                        |")
     print("|             BUSCAR ALIMENTO            |")
     print("|________________________________________|")
     
-    
     for alimento in alimentos:
-        if alimento["nome"] == nomeAlimento:
-            alimentosBuscados.append(alimento["nome"])
-            print("|                                        |")
-            print("|     Nome : ",alimento["nome"])
-            print("|     Categoria : ", alimento["categoria"])
-            print("|     Preço : ",alimento["preco"])
-    print("|________________________________________|\n")
+        if alimento["nome"] in nomeAlimento:
+            alimentoExistenteNoBanco = True
+
+    if alimentoExistenteNoBanco == True:
+        for alimento in alimentos:
+            if alimento["nome"] == nomeAlimento:
+                alimentoBuscado.append(alimento["nome"])
+                print("|                                        |")
+                print("|     Nome : ",alimento["nome"])
+                print("|     Categoria : ", alimento["categoria"])
+                print("|     Preço : ",alimento["preco"])
+        print("|________________________________________|\n")
+
+    if alimentoExistenteNoBanco == False:
+        print("Alimento não encontrado no banco de dados...")
+            
+    alimentosBuscados = {
+        "usuario": nomeUsuario,
+        "alimentos": alimentoBuscado
+    }
     input("Pressione QUALQUER tecla para voltar a tela home\n")
 
-def listarAlimentos():
-    pass
 
 def telaHome(usr): # dicionario do usuario que acessou
-    #{"nome": "lau", "usuario": "lau", "senha": "123"} 
     acesso = True
     while acesso == True:
-        os.system(limparTela)
-        print(" ________________________________________ ")
-        print("|                                        |")
-        print("|                FEI-FOOD                |")
-        print("|________________________________________|\n")
-        print("    BEM VINDO(A)",usr["usuario"],"\n")
 
-        telaMenuHome()
+        os.system(limparTela)
+        telamenuHome(usr)
         opcao = input("\nO que deseja fazer?\n")
+
         if opcao == "1":
             nomeAlimento = input("Informe o nome do alimento que deseja buscar: \n")
-            buscarAlimento(nomeAlimento)
+            buscarAlimento(usr["usuario"],nomeAlimento)
         
         elif opcao == "2":
             listarAlimentos()
             
         elif opcao == "3":
-            os.system(limparTela)
-            pedidoFinalizado = False
-            itens = []
-
-            print(" ________________________________________ ")
-            print("|                                        |")
-            print("|                PEDIDO                  |")
-            print("|________________________________________|\n")
-
-            while pedidoFinalizado == False:
-
-                nomeAlimento = input("Informe o nome do alimento:\n")
-                verificacao = verificarSeAlimentoExiste(nomeAlimento)
-                #print(verificacao)
-                if verificacao == True:# o alimento existe
-                    itens.append(nomeAlimento)
-                    print(nomeAlimento," adicionado(a) ao seu pedido")
-                    decisao = input("Deseja Adicionar outro alimento? sim(s) qualquer tecla para não: \n")
-                    if decisao == "s":
-                        pedidoFinalizado = False
-                    if decisao != "s":
-                        os.system(limparTela)
-                        cadastrarPedido(usr,itens)
-                        print("Fazendo o pedido...")
-                        time.sleep(1)
-                        print("pedido realizado com sucesso")
-                        decisao2 = input("gostaria de ver o seu pedido? sim(s) ou qualquer tecla para não: \n")
-                        if decisao2 == "s":
-                            visualizarPedido()
-                            pedidoFinalizado = True
-                            input()
-                        elif decisao2 != "s":
-                            print("Certo")
-                            pedidoFinalizado = True
-                            input()
-                else:
-                    print("Esse alimento não foi encontrado, tente outro...")
+            cadastrarPedido(usr)            
 
         elif opcao == "4":
             avaliarPedido(usr)
@@ -216,66 +250,82 @@ def telaHome(usr): # dicionario do usuario que acessou
             time.sleep(1)
 
 
-
 def loginUsuario(usuario, senha):
     encontrado = False
-    # print(usuarios)
     for usr in usuarios:
-        # print(usr)
-        if usuario == usr["usuario"] and senha == usr["senha"]: # Verificar nos arquivos de texto, se usuario[x] existe e se a senha[x] esta correta
-            # print("encontrado")
+        if usuario == usr["usuario"] and senha == usr["senha"]:
             print("Acessando...")
             time.sleep(1)
-            telaHome(usr)
+            telaHome(usr) # tela HOME
             encontrado = True
 
     if encontrado == False:
         print("Credenciais incorretas! ")
         time.sleep(1)
         input("Pressione QUALQUER tecla para voltar a tela inicial\n")
-               
-        
-
          
 
+#uma função recursiva para validar o cadastro do usuario
+def validarCadastro(usuario):
+    existe = False
+    for usr in usuarios:
+        if usuario == usr["usuario"]:
+            existe = True
+    
+    if existe == True:
+        print("Já existe alguém cadastrado com esse nome de usuário, tente outro...")
+        usuario = input("Informe um novo nome de usuário: ")
+        validarCadastro(usuario)
+
+    return existe #false
+
+
 def CadastrarUsuario(nome, usuario, senha):
-    usuario = {
+
+    cadastrado = validarCadastro(usuario)
+    if cadastrado == False:
+        print("Cadastrando usuario...")
+        time.sleep(1)
+
+    user = {
         "nome": nome,
         "usuario": usuario,
         "senha": senha
     }
-    usuarios.append(usuario)
-    # for usr in usuarios:
-    #     print(usr["nome"])
-    #     print(usr["usuario"])
-    #     print(usr["senha"])
+
+    usuarios.append(user)
+    # verificar se ocorreu tudo bem ao gravar no arquivo
     
-    return "Usuario cadastrado com sucesso" # verificar se ocorreu tudo bem ao gravar no arquivo
-    
+    return "Usuario cadastrado com sucesso" 
+
 
 # loop principal
-while True: 
-    opcao = 0
-    os.system(limparTela)
-    telaInicio()
+def main():
 
-    opcao = input("Escolha uma opção para continuar: ")
+    while True: 
+        opcao = 0
+        os.system(limparTela)
+        telaInicio()
+
+        opcao = input("Escolha uma opção para continuar: ")
     
-    if opcao == "1":
-        print("\n----------- LOGIN ----------\n")
-        usuario = input("Informe seu usuario: ")
-        senha = input("Informe sua senha: ")
-        loginUsuario(usuario, senha)
+        if opcao == "1":
+            print("\n----------- LOGIN ----------\n")
+            usuario = input("Informe seu usuario: ")
+            senha = input("Informe sua senha: ")
+            loginUsuario(usuario, senha)
 
-    elif opcao == "2":
-        print("\n----------- CADASTRAR-SE ----------\n")
-        nome = input("Informe um nome: ")
-        usuario = input("Informe um nome de usuario: ")
-        senha = input("Informe uma senha: ")
-        mensagem = CadastrarUsuario(nome, usuario, senha)
-        print(mensagem)
-        input("\nPressione QUALQUER tecla para continuar\n")
+        elif opcao == "2":
+            print("\n----------- CADASTRAR-SE ----------\n")
+            nome = input("Informe um nome: ")
+            usuario = input("Informe um nome de usuario: ")
+            senha = input("Informe uma senha: ")
+            mensagem = CadastrarUsuario(nome, usuario, senha)
+            print(mensagem)
+            input("\nPressione QUALQUER tecla para continuar\n")
 
-    else:
-        print("Informe uma opção válida! ")
-        input("\nPressione QUALQUER tecla para continuar\n")
+        else:
+            print("Informe uma opção válida! ")
+            input("\nPressione QUALQUER tecla para continuar\n")
+
+main()
