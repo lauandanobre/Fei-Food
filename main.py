@@ -3,77 +3,12 @@
 
 import os
 import time
-
+from menu import *
+from dados import alimentos, usuarios, pedidos, alimentosBuscados
+                
 # Variaveis de escopo global
 limparTela = "clear"
 
-# Lista de dicionários
-usuarios = [
-    {
-        "nome":"tia",
-        "usuario":"tia",
-        "senha":"tia"
-    },
-    {
-        "nome":"lau",
-        "usuario":"lau",
-        "senha":"lau" 
-    }
-]
-alimentos = [
-    {
-        "nome":"pizza",
-        "preco": 30,
-        "categoria":"italiana"
-    },
-    {
-        "nome":"maca",
-        "preco": 5,
-        "categoria":"argentina"
-    },
-    {
-        "nome":"acaraje",
-        "preco": 15,
-        "categoria":"bahiana"
-    },
-] 
-
-pedidos = [] # [{'usuario': 'lau', 'itens': [{'nome': 'pizza', 'preco': 30, 'categoria': 'italiana'}], 'total': 30, 'avaliacao': ''}]
-alimentosBuscados = [] # [{'usuario': 'lau', 'alimentos': ['pizza', 'maça']}]
-
-def telaInicio():
-    print(" ________________________________________ ")
-    print("|                                        |")
-    print("|       SEJA BEM VINDO AO FEIFOOD        |")
-    print("|________________________________________|\n")
-    print("1) Login")
-    print("2) Cadastrar-se")
-    
-def telamenuHome(usr):
-    print(" ________________________________________ ")
-    print("|                                        |")
-    print("|                FEI-FOOD                |")
-    print("|________________________________________|\n")
-    print("    BEM VINDO(A)",usr["usuario"],"\n")
-    print("1) Buscar por alimento")
-    print("2) Listar informações de alimentos buscados")
-    print("3) Meus Pedidos")
-    print("4) Avaliar pedido")
-    print("5) Logout")
-
-def menuHomePedidos(usr):
-    print(" ________________________________________ ")
-    print("|                                        |")
-    print("|              MEUS PEDIDOS              |")
-    print("|________________________________________|\n")
-    print("Pedidos de ",usr["usuario"],"\n")
-    print("1) Visualizar pedidos")
-    print("2) Cadastrar pedido")
-    print("3) Editar pedido")
-    print("4) Excluir pedido")
-    print("5) Voltar")
-
-                
 def verificarSeAlimentoExisteNoBanco(nomeAlimento):
     encontrado = False
     for alimento in alimentos:
