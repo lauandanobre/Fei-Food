@@ -4,29 +4,18 @@
 import os
 import time
 import json
-
-usuarios = []
-pedidos = []
-alimentosBuscados = []
-alimentos = [
-    {
-        "nome":"pizza",
-        "preco": 30,
-        "categoria":"italiana"
-    },
-    {
-        "nome":"maça",
-        "preco": 5,
-        "categoria":"argentina"
-    }
-] 
-
 from dados import *
 
 usuariosArq = "usuarios.txt"
 pedidosArq = "pedidos.json"
 
-limparTela = "clear"
+#limparTela = "clear"
+if os.name == "nt":  # Windows
+    limparTela = "cls"
+else:
+    limparTela = "clear"
+tempoLongo = 0.7
+tempoCurto = 0.3
 
 #================================== carregar
 def carregarUsuarios():
@@ -107,7 +96,7 @@ def menuHomePedidos(usr):
     print("|                                        |")
     print("|              MEUS PEDIDOS              |")
     print("|________________________________________|\n")
-    print("Pedidos de ",usr["usuario"],"\n")
+    print("Pedidos de",usr["usuario"],"\n")
     print("1) Visualizar pedidos")
     print("2) Cadastrar pedido")
     print("3) Editar pedido")
@@ -120,46 +109,30 @@ def verificarSeAlimentoExisteNoBanco(nomeAlimento):
     for alimento in alimentos:
         if alimento["nome"] == nomeAlimento:
             encontrado = True
-    
+
     return encontrado
 
-
-def avaliarPedido(usr):
-    os.system(limparTela)
-    print("--------------- Avaliar Pedido -----------------")
-    print("Nome : ",usr["nome"])
-    mostrarPedidos(usr)
-    possui = verificarSePossuiPedidos(usr)
-    if possui == False:
-        print("Você não possui pedidos para avaliar...")
-        input("Pressione QUALQUER tecla para voltar a tela home\n")
-        return "finalizado"
-
-    idPedido = input("Informe o ID do pedido que deseja avaliar: \n")
-    for pedido in pedidos:
-        if pedido["usuario"] == usr["usuario"]: # usuario que tem o acesso
-            if str(pedido["id"]) == idPedido:
-                avaliacao = input("Informe sua avaliação para o pedido (de 1 a 5 estrelas): \n")
-                pedido["avaliacao"] = avaliacao
-                print("Avaliação registrada com sucesso!")
-                input("Pressione QUALQUER tecla para voltar a tela home\n")
-                return "finalizado"
 
 def mostrarPedidos(usr):
     encontrado = False
     os.system(limparTela)
+    print("Pedidos:\n")
     for pedido in pedidos:
         if pedido["usuario"] == usr["usuario"]:
             encontrado = True
-            print("--------------- Pedido -----------------")
+            print("------------------------------------")
             print("ID: ", pedido["id"])
             print("Itens:")
-            for item in pedido["itens"]:
-                print(f"Nome: {item['nome']}\n Categoria: {item['categoria']}\n Preço Unitário: R${item['preco']}")
             print("Total: R$", pedido["total"])
             print("Avaliação:", pedido.get("avaliacao", "Não avaliado"))
-    if encontrado:
-        print(f"\n{len([p for p in pedidos if p['usuario']==usr['usuario']])} pedido(s) encontrados")
+    
+    if encontrado == True:
+        cont = 0
+        for pedido in pedidos:
+            if pedido["usuario"] == usr["usuario"]:
+                cont += 1
+        
+        print(f"\n{cont} pedido(s) encontrados")
     else:
         print("Você não fez nenhum pedido ainda...")
 
@@ -173,22 +146,25 @@ def verificarSePossuiPedidos(usr):
 
 def editarPedido(usr):
     os.system(limparTela)
-    if not verificarSePossuiPedidos(usr):
-        print("Você não possui pedidos para editar.")
-        input("Pressione qualquer tecla para voltar.")
-        return
+    encontrado = False
+    v = verificarSePossuiPedidos(usr)
+    if v == False:
+        return "Você não possui pedidos para editar."
 
     mostrarPedidos(usr)
     idPedido = input("Informe o ID do pedido que deseja editar: ")
     for pedido in pedidos:
         if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
+            encontrado = True
             print("1) Adicionar item")
             print("2) Remover item")
             print("3) Voltar")
             decisao = input("Escolha a opção: ")
             if decisao == "1":
+                time.sleep(tempoCurto)
                 novoItem = input("Informe o alimento a adicionar: ")
-                if verificarSeAlimentoExisteNoBanco(novoItem):
+                existe = verificarSeAlimentoExisteNoBanco(novoItem)
+                if existe == True:
                     for alimento in alimentos:
                         if alimento["nome"] == novoItem:
                             pedido["itens"].append(alimento)
@@ -196,56 +172,66 @@ def editarPedido(usr):
                             salvarPedidos()
                             print("Item adicionado com sucesso!")
                             break
+                            
             elif decisao == "2":
+                time.sleep(tempoCurto)
                 removerItem = input("Informe o alimento a remover: ")
-                for i, item in enumerate(pedido["itens"]):
+                for item in pedido["itens"]:
                     if item["nome"] == removerItem:
                         pedido["total"] -= item["preco"]
-                        del pedido["itens"][i]
+                        pedido["itens"].remove(item)
                         salvarPedidos()
                         print("Item removido com sucesso!")
                         break
-            return
-    print("Pedido não encontrado.")
-    input("Pressione qualquer tecla para voltar.")
+            
+    if encontrado == False:
+        return "Pedido não encontrado."
 
 def excluirPedido(usr):
     os.system(limparTela)
-    if not verificarSePossuiPedidos(usr):
-        print("Você não possui pedidos para excluir.")
-        input("Pressione qualquer tecla para voltar.")
-        return
+    encontrado = False
+    v = verificarSePossuiPedidos(usr)
+    if v == False:
+        return "Você não possui pedidos para excluir."
+        
+    if v == True:
+        mostrarPedidos(usr)
+        idPedido = input("Informe o ID do pedido que deseja excluir: ")
+        for pedido in pedidos:
+            if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
+                time.sleep(tempoCurto)
+                pedidos.remove(pedido)
+                salvarPedidos()
+                encontrado = True
+                return "Pedido excluído com sucesso!"
+                
 
-    mostrarPedidos(usr)
-    idPedido = input("Informe o ID do pedido que deseja excluir: ")
-    for pedido in pedidos:
-        if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
-            pedidos.remove(pedido)
-            salvarPedidos()
-            print("Pedido excluído com sucesso!")
-            input("Pressione qualquer tecla para voltar.")
-            return
-    print("Pedido não encontrado.")
-    input("Pressione qualquer tecla para voltar.")
+    if encontrado == False:
+        return "Pedido não encontrado."
 
 def avaliarPedido(usr):
     os.system(limparTela)
-    if not verificarSePossuiPedidos(usr):
-        print("Você não possui pedidos para avaliar.")
-        input("Pressione qualquer tecla para voltar.")
-        return
-    mostrarPedidos(usr)
-    idPedido = input("Informe o ID do pedido que deseja avaliar: ")
-    for pedido in pedidos:
-        if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
-            avaliacao = input("Informe sua avaliação (1 a 5 estrelas): ")
-            pedido["avaliacao"] = avaliacao
-            salvarPedidos()
-            print("Avaliação registrada com sucesso!")
-            input("Pressione qualquer tecla para voltar.")
-            return
-    print("Pedido não encontrado.")
-    input("Pressione qualquer tecla para voltar.")
+    encontrado = False
+    v = verificarSePossuiPedidos(usr)
+    if v == False:
+        return "Você não possui pedidos para avaliar."
+    if v == True:
+        mostrarPedidos(usr)
+        idPedido = input("Informe o ID do pedido que deseja avaliar: ")
+        for pedido in pedidos:
+            if pedido["usuario"] == usr["usuario"] and str(pedido["id"]) == idPedido:
+                while True:
+                    avaliacao = int(input("Informe sua avaliação para o pedido (de 1 a 5 estrelas): \n"))
+                    if 1 <= avaliacao and avaliacao <= 5:
+                        pedido["avaliacao"] = avaliacao
+                        salvarPedidos()  # Atualizar o arquivo JSON dos pedidos
+                        encontrado = True
+                        return "Avaliação registrada com sucesso!"
+                    else:
+                        print("Avaliação inválida! Informe um número entre 1 e 5.")
+    if encontrado == False:
+        return "Pedido não encontrado."
+    
 
 # função recursiva para finalizar o pedido
 def finalizarPedido():
@@ -263,7 +249,7 @@ def finalizarPedido():
 
 def adicionarItensAoPedido(itens,nomeAlimento):
     itens.append(nomeAlimento)
-    time.sleep(0.3)
+    time.sleep(tempoCurto)
     print(nomeAlimento," adicionado(a) ao seu pedido.")
 
 def cadastrarPedido(usr):
@@ -312,9 +298,8 @@ def cadastrarPedido(usr):
 
                 os.system(limparTela)
                 print("Fazendo o pedido...")
-                time.sleep(1)
-                print("Pedido realizado com sucesso!")
-                input("Pressione QUALQUER tecla para voltar à tela home\n")
+                time.sleep(tempoLongo)
+                return "Pedido realizado com sucesso!"
         else:
             print("Alimento não encontrado no banco de dados, tente novamente...")
 
@@ -343,10 +328,12 @@ def listarAlimentosBuscados(usr):
         print(" Você ainda não buscou por nenhum alimento.")
 
     else:
+        print(" ______________________________________")
+        print("|                                      ")
         print("|     ALIMENTOS BUSCADOS RECENTEMENTE: ")
         print("|")
         for nome in alimentos_usuario:
-            print(f"| {nome}")
+            print(f"| - {nome}")
 
     print("|________________________________________\n")
     input("Pressione QUALQUER tecla para voltar à tela home\n")
@@ -358,10 +345,6 @@ def buscarAlimento(usr, nomeAlimento):
     alimentoBuscado = []
     alimentoExistenteNoBanco = False
     os.system(limparTela)
-    print("__________________________________________")
-    print("|                                        |")
-    print("|             BUSCAR ALIMENTO            |")
-    print("|________________________________________|")
     
     for alimento in alimentos:
         if alimento["nome"] in nomeAlimento:
@@ -375,6 +358,10 @@ def buscarAlimento(usr, nomeAlimento):
                     "alimento": nomeAlimento
                 }
                 alimentoBuscado.append(item)
+                print(" ________________________________________")
+                print("|                                        |")
+                print("|             BUSCAR ALIMENTO            |")
+                print("|________________________________________|")
                 print("|                                        |")
                 print("|     Nome : ",alimento["nome"])
                 print("|     Categoria : ", alimento["categoria"])
@@ -382,6 +369,7 @@ def buscarAlimento(usr, nomeAlimento):
         print("|________________________________________|\n")
 
     if alimentoExistenteNoBanco == False:
+        time.sleep(tempoCurto)
         print("Alimento não encontrado no banco de dados...")
             
     busca = {
@@ -392,7 +380,7 @@ def buscarAlimento(usr, nomeAlimento):
     input("Pressione QUALQUER tecla para voltar a tela home\n")
 
 
-def telaHome(usr): # dicionario do usuario que acessou
+def telaHome(usr): # dicionario do usuario que acessou(que tem o acesso)
     acesso = True
     while acesso == True:
 
@@ -403,6 +391,7 @@ def telaHome(usr): # dicionario do usuario que acessou
         if opcao == "1":
             os.system(limparTela)
             nomeAlimento = input("Informe o nome do alimento que deseja buscar: \n")
+            os.system(tempoLongo)
             buscarAlimento(usr,nomeAlimento)
         
         elif opcao == "2":
@@ -419,32 +408,40 @@ def telaHome(usr): # dicionario do usuario que acessou
                     input("Pressione QUALQUER tecla para voltar a tela de pedidos\n")
                     break
                 elif decisao == "2":
-                    cadastrarPedido(usr)
+                    resposta = cadastrarPedido(usr)
+                    print(resposta)
+                    input("Pressione QUALQUER tecla para voltar à tela home\n")
                     break
                 elif decisao == "3":
-                    editarPedido(usr)
+                    resposta = editarPedido(usr)
+                    print(resposta)
+                    input("Pressione QUALQUER tecla para voltar à tela home\n")
                     break
                 elif decisao == "4":
-                    excluirPedido(usr)
+                    resposta = excluirPedido(usr)
+                    print(resposta)
+                    input("Pressione QUALQUER tecla para voltar à tela home\n")
                     break
                 elif decisao == "5":
                     print("Voltando...")
-                    time.sleep(1)
+                    time.sleep(tempoLongo)
                     break
                 else:
                     print("Informe uma opção válida!")
-                    time.sleep(1)           
+                    time.sleep(tempoLongo)           
 
         elif opcao == "4":
-            avaliarPedido(usr)
+            resposta = avaliarPedido(usr)
+            print(resposta)
+            input("Pressione QUALQUER tecla para voltar à tela home\n")
         elif opcao == "5":
             input("Pressione QUALQUER tecla para voltar a tela de login\n")
             print("Voltando para a tela de login...")
-            time.sleep(1)
-            break
+            time.sleep(tempoLongo)
+            acesso = False
         else:
             print("Informe uma opção válida!")
-            time.sleep(1)
+            time.sleep(tempoLongo)
 
 
 def loginUsuario(usuario, senha):
@@ -452,13 +449,13 @@ def loginUsuario(usuario, senha):
     for usr in usuarios:
         if usuario == usr["usuario"] and senha == usr["senha"]:
             print("Acessando...")
-            time.sleep(1)
+            time.sleep(tempoLongo)
             telaHome(usr) # tela HOME
             encontrado = True
 
     if encontrado == False:
         print("Credenciais incorretas! ")
-        time.sleep(1)
+        time.sleep(tempoLongo)
         input("Pressione QUALQUER tecla para voltar a tela inicial\n")
          
 
@@ -483,7 +480,7 @@ def CadastrarUsuario(nome, usuario, senha):
     
     if jaCadastrado == False:
         print("Cadastrando usuario...")
-        time.sleep(1)
+        time.sleep(tempoLongo)
 
     user = {
         "nome": nome,
@@ -492,7 +489,7 @@ def CadastrarUsuario(nome, usuario, senha):
     }
     
     usuarios.append(user)
-    # verificar se ocorreu tudo bem ao gravar no arquivo
+    # gravar no banco de dedos, arquivo txt
     adicionarUsuario(user)
     return "Usuario cadastrado com sucesso" 
 
