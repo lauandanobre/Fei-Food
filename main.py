@@ -5,9 +5,19 @@ import os
 import time
 from menu import *
 from dados import alimentos, usuarios, pedidos, alimentosBuscados
-                
-# Variaveis de escopo global
+
+arquivoUsuarios = "./dados/usuarios.txt"
+arquivoPedidos = "./dados/pedidos.txt"
+arquivoAlimentos = "./dados/alimentos.txt"
+arquivoAlimentosBuscados = "./dados/alimentosBuscados.txt"
+
 limparTela = "clear"
+
+def adicionarDadosUsuario(usr):
+    with open(arquivoUsuarios, "a") as f:
+        for usr in usuarios:
+            f.write(f"{usr['nome']},{usr['usuario']},{usr['senha']}\n")
+
 
 def verificarSeAlimentoExisteNoBanco(nomeAlimento):
     encontrado = False
@@ -377,6 +387,7 @@ def validarCadastro(usuario):
     return existe #false
 
 
+
 def CadastrarUsuario(nome, usuario, senha):
 
     cadastrado = validarCadastro(usuario)
@@ -390,6 +401,9 @@ def CadastrarUsuario(nome, usuario, senha):
     }
 
     usuarios.append(user)
+    with open(arquivoUsuarios, "a") as f:
+        f.write(f"{user['nome']},{user['usuario']},{user['senha']}\n")
+    
     # verificar se ocorreu tudo bem ao gravar no arquivo
     
     return "Usuario cadastrado com sucesso" 
