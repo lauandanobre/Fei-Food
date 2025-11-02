@@ -1,16 +1,5 @@
 # Listas de dicionários
-usuarios = [
-    {
-        "nome":"teste",
-        "usuario":"teste",
-        "senha":"teste"
-    },
-    {
-        "nome":"lau",
-        "usuario":"lau",
-        "senha":"lau" 
-    }
-]
+usuarios = []
 pedidos = []
 alimentosBuscados = []
 alimentos = [
@@ -20,13 +9,8 @@ alimentos = [
         "categoria":"italiana"
     },
     {
-        "nome":"maca",
+        "nome":"aua",
         "preco": 5,
         "categoria":"argentina"
-    },
-    {
-        "nome":"acaraje",
-        "preco": 15,
-        "categoria":"bahiana"
-    },
+    }
 ] 

@@ -3,20 +3,116 @@
 
 import os
 import time
-from menu import *
-from dados import alimentos, usuarios, pedidos, alimentosBuscados
+import json
 
-arquivoUsuarios = "./dados/usuarios.txt"
-arquivoPedidos = "./dados/pedidos.txt"
-arquivoAlimentos = "./dados/alimentos.txt"
-arquivoAlimentosBuscados = "./dados/alimentosBuscados.txt"
+usuarios = []
+pedidos = []
+alimentosBuscados = []
+alimentos = [
+    {
+        "nome":"pizza",
+        "preco": 30,
+        "categoria":"italiana"
+    },
+    {
+        "nome":"maça",
+        "preco": 5,
+        "categoria":"argentina"
+    }
+] 
+
+from dados import *
+
+usuariosArq = "usuarios.txt"
+pedidosArq = "pedidos.json"
 
 limparTela = "clear"
 
-def adicionarDadosUsuario(usr):
-    with open(arquivoUsuarios, "a") as f:
-        for usr in usuarios:
-            f.write(f"{usr['nome']},{usr['usuario']},{usr['senha']}\n")
+#================================== carregar
+def carregarUsuarios():
+    arquivo = open(usuariosArq, "a") # cria arquivo caso esse não exista
+    arquivo.close()
+    arquivo = open(usuariosArq,"r")
+    for linha in arquivo.readlines():
+        #print(linha)
+        palavras = linha.strip()
+        palavras = palavras.split(",")
+        nome, usuario, senha = palavras
+        #print(nome,usuario,senha)
+        user = {
+            "nome": nome,
+            "usuario": usuario,
+            "senha": senha
+        }
+        usuarios.append(user)
+    #print(usuarios)
+    arquivo.close()
+
+# carregarUsuarios()
+
+def carregarPedidos():
+    global pedidos
+    if not os.path.exists(pedidosArq):
+        with open(pedidosArq, "w") as f:
+            json.dump([], f)
+    with open(pedidosArq, "r") as arquivo:
+        try:
+            pedidos = json.load(arquivo)
+        except json.JSONDecodeError:
+            pedidos = []
+
+# carregarPedidos()
+
+def salvarPedidos():
+    with open(pedidosArq, "w") as arquivo:
+        json.dump(pedidos, arquivo, indent=4)
+
+def adicionarPedido(ped):
+    pedidos.append(ped)
+    salvarPedidos()
+
+#==================================== adicionar
+def adicionarUsuario(usr):
+    arquivo = open(usuariosArq, "a")
+    arquivo.write(f"{usr['nome']},{usr['usuario']},{usr['senha']}\n")
+    arquivo.close()
+
+def adicionarPedido(ped):
+    arquivo = open(pedidosArq, "a")
+    arquivo.write(f"{ped['id']};{ped['usuario']};{ped['itens']};{ped['total']};{ped['avaliacao']}\n")
+    arquivo.close()
+
+def telaInicio():
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|       SEJA BEM VINDO AO FEIFOOD        |")
+    print("|________________________________________|\n")
+    print("1) Login")
+    print("2) Cadastrar-se")
+    
+def telamenuHome(usr):
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|                FEI-FOOD                |")
+    print("|________________________________________|\n")
+    print("    BEM VINDO(A)",usr["usuario"],"\n")
+    print("1) Buscar por alimento")
+    print("2) Listar informações de alimentos buscados")
+    print("3) Meus Pedidos")
+    print("4) Avaliar pedido")
+    print("5) Logout")
+
+def menuHomePedidos(usr):
+    print(" ________________________________________ ")
+    print("|                                        |")
+    print("|              MEUS PEDIDOS              |")
+    print("|________________________________________|\n")
+    print("Pedidos de ",usr["usuario"],"\n")
+    print("1) Visualizar pedidos")
+    print("2) Cadastrar pedido")
+    print("3) Editar pedido")
+    print("4) Excluir pedido")
+    print("5) Voltar")
 
 
 def verificarSeAlimentoExisteNoBanco(nomeAlimento):
@@ -26,27 +122,6 @@ def verificarSeAlimentoExisteNoBanco(nomeAlimento):
             encontrado = True
     
     return encontrado
-
-def visualizarPedido():
-    print(" ________________________________________")
-    print("|                                        ")
-    print("|                PEDIDO                  ")
-    print("|==== ALIMENTOS =========================")
-    print("|                                        ")
-
-    print(pedidos[-1])
-    pedido = pedidos[-1]
-    total = pedido["total"]
-    for item in pedido["itens"]:
-        print(f"|{item["nome"]} ------- R$ {item["preco"]}")
-
-    print("|                                        ")
-    print("|==== TOTAL =============================")
-    print("|                                        ")
-    print(f"|   {total}                              ")
-    print("|________________________________________\n")    
-    input("Pressione QUALQUER tecla para voltar a tela home\n")
-
 
 
 def avaliarPedido(usr):
@@ -70,13 +145,25 @@ def avaliarPedido(usr):
                 input("Pressione QUALQUER tecla para voltar a tela home\n")
                 return "finalizado"
 
-
 def mostrarPedidos(usr):
+    encontrado = False
+    os.system(limparTela)
     for pedido in pedidos:
         if pedido["usuario"] == usr["usuario"]:
+            encontrado = True
             print("--------------- Pedido -----------------")
-            print("ID: ",pedido["id"]," Itens: ",pedido["itens"]," Total: ",pedido["total"])
-    print(f"{len(pedidos)} pedidos encontrados")
+            print("ID: ", pedido["id"])
+            print("Itens:")
+            for item in pedido["itens"]:
+                print(f"Nome: {item['nome']}\n Categoria: {item['categoria']}\n Preço Unitário: R${item['preco']}")
+            print("Total: R$", pedido["total"])
+            print("Avaliação:", pedido.get("avaliacao", "Não avaliado"))
+    if encontrado:
+        print(f"\n{len([p for p in pedidos if p['usuario']==usr['usuario']])} pedido(s) encontrados")
+    else:
+        print("Você não fez nenhum pedido ainda...")
+
+
 
 def verificarSePossuiPedidos(usr):
     for pedido in pedidos:
@@ -84,98 +171,86 @@ def verificarSePossuiPedidos(usr):
             return True
     return False
 
-def excluirPedido(usr):
-    os.system(limparTela)
-    pedidoExcluido = False
-    print(" ________________________________________ ")
-    print("|                                        |")
-    print("|             EXCLUIR PEDIDO             |")
-    print("|________________________________________|\n")
-    while pedidoExcluido == False:
-        os.system(limparTela)
-        mostrarPedidos(usr)
-        possuiPedidos = verificarSePossuiPedidos(usr)
-        if possuiPedidos == False:
-            print("Você não possui pedidos para excluir...")
-            input("Pressione QUALQUER tecla para voltar a tela home\n")
-            break
-
-        idPedido = input("Informe o ID do pedido que deseja excluir: \n")
-
-        for pedido in pedidos:
-            if str(pedido["id"]) == idPedido and pedido["usuario"] == usr["usuario"]:
-                pedidos.remove(pedido)
-                pedidoExcluido = True
-                print("Pedido excluído com sucesso!")
-                input("Pressione QUALQUER tecla para voltar a tela home\n")
-                break
-
-        if pedidoExcluido == False:
-            print("Pedido não encontrado, tente novamente...")
-            time.sleep(1)
-
 def editarPedido(usr):
     os.system(limparTela)
-    edicaoFinalizada = False
-    print(" ________________________________________ ")
-    print("|                                        |")
-    print("|             EDITAR PEDIDO              |")
-    print("|________________________________________|\n")
-    while edicaoFinalizada == False:
-        os.system(limparTela)
-        mostrarPedidos(usr)
-        possuiPedidos = verificarSePossuiPedidos(usr)
-        if possuiPedidos == False:
-            print("Você não possui pedidos para editar...")
-            input("Pressione QUALQUER tecla para voltar a tela home\n")
-            break
+    if not verificarSePossuiPedidos(usr):
+        print("Você não possui pedidos para editar.")
+        input("Pressione qualquer tecla para voltar.")
+        return
 
-        idPedido = input("Informe o ID do pedido que deseja editar: \n")
+    mostrarPedidos(usr)
+    idPedido = input("Informe o ID do pedido que deseja editar: ")
+    for pedido in pedidos:
+        if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
+            print("1) Adicionar item")
+            print("2) Remover item")
+            print("3) Voltar")
+            decisao = input("Escolha a opção: ")
+            if decisao == "1":
+                novoItem = input("Informe o alimento a adicionar: ")
+                if verificarSeAlimentoExisteNoBanco(novoItem):
+                    for alimento in alimentos:
+                        if alimento["nome"] == novoItem:
+                            pedido["itens"].append(alimento)
+                            pedido["total"] += alimento["preco"]
+                            salvarPedidos()
+                            print("Item adicionado com sucesso!")
+                            break
+            elif decisao == "2":
+                removerItem = input("Informe o alimento a remover: ")
+                for i, item in enumerate(pedido["itens"]):
+                    if item["nome"] == removerItem:
+                        pedido["total"] -= item["preco"]
+                        del pedido["itens"][i]
+                        salvarPedidos()
+                        print("Item removido com sucesso!")
+                        break
+            return
+    print("Pedido não encontrado.")
+    input("Pressione qualquer tecla para voltar.")
 
-        for pedido in pedidos:
-            if str(pedido["id"]) == idPedido and pedido["usuario"] == usr["usuario"]:
-                print("Pedido encontrado: ",pedido)
-                print("1) Adicionar item")
-                print("2) Remover item")
-                print("3) Voltar")
-                decisao = input("\nO que deseja fazer?\n")
-                if decisao == "1":
-                    novoItem = input("Informe o nome do novo alimento a ser adicionado: \n")
-                    alimentoExiste = verificarSeAlimentoExisteNoBanco(novoItem)
-                    if alimentoExiste == True:
-                        pedido["itens"].append(novoItem)
-                        for alimento in alimentos:
-                            if alimento["nome"] == novoItem:
-                                pedido["total"] += alimento["preco"]
-                    print("Pedido atualizado com sucesso: ",pedido)
-                    edicaoFinalizada = True
-                    input("Pressione QUALQUER tecla para voltar a tela home\n")
-                elif decisao == "2":
-                    alimentoParaRemover = input("Informe o nome do alimento a ser removido: \n")
-                    if alimentoParaRemover in pedido["itens"]:
-                        pedido["itens"].remove(alimentoParaRemover)
-                        for alimento in alimentos:
-                            if alimento["nome"] == alimentoParaRemover:
-                                pedido["total"] -= alimento["preco"]
-                        print(f"Pedido {pedido["id"]} atualizado com sucesso: ")
-                    else:
-                        print("Item não encontrado no pedido.")
-                    edicaoFinalizada = True
-                    input("Pressione QUALQUER tecla para voltar a tela home\n")
-                    
-                elif decisao == "3":
-                    edicaoFinalizada = True
-                    break
-                else:
-                    print("Opção inválida, tente novamente...")
-                    time.sleep(1)    
+def excluirPedido(usr):
+    os.system(limparTela)
+    if not verificarSePossuiPedidos(usr):
+        print("Você não possui pedidos para excluir.")
+        input("Pressione qualquer tecla para voltar.")
+        return
 
-        if edicaoFinalizada == False:
-            print("Pedido não encontrado, tente novamente...")
+    mostrarPedidos(usr)
+    idPedido = input("Informe o ID do pedido que deseja excluir: ")
+    for pedido in pedidos:
+        if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
+            pedidos.remove(pedido)
+            salvarPedidos()
+            print("Pedido excluído com sucesso!")
+            input("Pressione qualquer tecla para voltar.")
+            return
+    print("Pedido não encontrado.")
+    input("Pressione qualquer tecla para voltar.")
+
+def avaliarPedido(usr):
+    os.system(limparTela)
+    if not verificarSePossuiPedidos(usr):
+        print("Você não possui pedidos para avaliar.")
+        input("Pressione qualquer tecla para voltar.")
+        return
+    mostrarPedidos(usr)
+    idPedido = input("Informe o ID do pedido que deseja avaliar: ")
+    for pedido in pedidos:
+        if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
+            avaliacao = input("Informe sua avaliação (1 a 5 estrelas): ")
+            pedido["avaliacao"] = avaliacao
+            salvarPedidos()
+            print("Avaliação registrada com sucesso!")
+            input("Pressione qualquer tecla para voltar.")
+            return
+    print("Pedido não encontrado.")
+    input("Pressione qualquer tecla para voltar.")
 
 # função recursiva para finalizar o pedido
 def finalizarPedido():
-    decisao = input("Deseja Adicionar outro alimento? sim(1) ou finalizar pedido?(2) \n")
+    pedidoFinalizado = False
+    decisao = input("\nDeseja Adicionar outro alimento? sim(1) ou finalizar pedido?(2) \n")
     if decisao == "1":
         pedidoFinalizado = False
     elif decisao == "2":
@@ -183,65 +258,65 @@ def finalizarPedido():
     else:
         print("Opção inválida, tente novamente...")
         finalizarPedido()
+
     return pedidoFinalizado
 
 def adicionarItensAoPedido(itens,nomeAlimento):
     itens.append(nomeAlimento)
-    print("Itens no pedido até o momento: ")
-    print(itens)
+    time.sleep(0.3)
     print(nomeAlimento," adicionado(a) ao seu pedido.")
-
 
 def cadastrarPedido(usr):
     os.system(limparTela)
     pedidoFinalizado = False
-    itens = []
+    itens = []  # lista de nomes de alimentos
 
     print(" ________________________________________ ")
     print("|                                        |")
     print("|           CADASTRAR PEDIDO             |")
     print("|________________________________________|\n")
 
-    while pedidoFinalizado == False:
-        
+    while not pedidoFinalizado:
         nomeAlimento = input("Informe o nome do alimento a ser adicionado no pedido:\n")
-        alimentoExiste = verificarSeAlimentoExisteNoBanco(nomeAlimento)
-        if alimentoExiste == True:# o alimento existe
-            adicionarItensAoPedido(itens, nomeAlimento)
-            finalizado = finalizarPedido()
-            if finalizado == True:
+        if verificarSeAlimentoExisteNoBanco(nomeAlimento):
+            itens.append(nomeAlimento)
+            print(f"{nomeAlimento} adicionado ao pedido.")
+
+            # Pergunta se deseja finalizar o pedido
+            decisao = input("\nDeseja adicionar outro alimento? sim(1) ou finalizar pedido?(2) \n")
+            if decisao == "2":
                 pedidoFinalizado = True
-                itensPedido = []
+
+                # Calcula total do pedido
                 totalPedido = 0
-
-                for alimento in alimentos:
-                    for itemUsr in itens:
-                        if alimento["nome"] == itemUsr:
-                            itensPedido.append(alimento)
+                for nome in itens:
+                    for alimento in alimentos:
+                        if alimento["nome"] == nome:
                             totalPedido += alimento["preco"]
-                print("Itens do pedido: ",itensPedido)
-                id = len(pedidos) + 1 # para não começar em zero, adicionei 1
 
+                # Define ID do pedido
+                idPedido = len(pedidos) + 1
+
+                # Cria dicionário do pedido
                 novoPedido = {
-                    "id": id,
+                    "id": idPedido,
                     "usuario": usr["usuario"],
-                    "itens": itensPedido,
+                    "itens": itens,  # apenas nomes de alimentos
                     "total": totalPedido,
                     "avaliacao": ""
                 }
 
+                # Adiciona à lista e salva no JSON
                 pedidos.append(novoPedido)
-                
+                salvarPedidos()  # salva todos os pedidos no JSON
+
                 os.system(limparTela)
                 print("Fazendo o pedido...")
                 time.sleep(1)
-                print("pedido realizado com sucesso")
-                #visualizarPedido()
-                input("Pressione QUALQUER tecla para voltar a tela home\n")
+                print("Pedido realizado com sucesso!")
+                input("Pressione QUALQUER tecla para voltar à tela home\n")
         else:
             print("Alimento não encontrado no banco de dados, tente novamente...")
-
-
 
 def listarAlimentos():
     os.system(limparTela)
@@ -251,32 +326,42 @@ def listarAlimentos():
     print("|________________________________________|\n")
 
     for alimento in alimentos:
-        print("|     Nome : ",alimento["nome"], " Categoria: ", alimento["categoria"], " Preço: ",alimento["preco"])
+        print("|     Nome : ", alimento["nome"], " Categoria: ", alimento["categoria"], " Preço: ",alimento["preco"])
         print("|________________________________________|")
     input("Pressione QUALQUER tecla para voltar a tela home\n")
 
+
 def listarAlimentosBuscados(usr):
     os.system(limparTela)
-    print("__________________________________________")
-    print("|                                        |")
-    print("|        ALIMENTOS BUSCADOS              |")
-    print("|________________________________________|\n")
-    print("|     Usuario : ",usr["usuario"])
-
+    alimentos_usuario = []
     for busca in alimentosBuscados:
         if busca["usuario"] == usr["usuario"]:
-            print("|     Alimentos : ", busca["alimentos"])
-    print("|________________________________________|\n")
-    input("Pressione QUALQUER tecla para voltar a tela home\n")
+            for alimento in busca["alimentos"]:
+                alimentos_usuario.append(alimento["alimento"])
 
-def buscarAlimento(nomeUsuario,nomeAlimento):
+    if len(alimentos_usuario) == 0:
+        print(" Você ainda não buscou por nenhum alimento.")
+
+    else:
+        print("|     ALIMENTOS BUSCADOS RECENTEMENTE: ")
+        print("|")
+        for nome in alimentos_usuario:
+            print(f"| {nome}")
+
+    print("|________________________________________\n")
+    input("Pressione QUALQUER tecla para voltar à tela home\n")
+
+
+
+def buscarAlimento(usr, nomeAlimento):
+    nomeUsuario = usr["usuario"]
     alimentoBuscado = []
     alimentoExistenteNoBanco = False
     os.system(limparTela)
     print("__________________________________________")
     print("|                                        |")
     print("|             BUSCAR ALIMENTO            |")
-    print("|________________________________________|\n")
+    print("|________________________________________|")
     
     for alimento in alimentos:
         if alimento["nome"] in nomeAlimento:
@@ -285,7 +370,11 @@ def buscarAlimento(nomeUsuario,nomeAlimento):
     if alimentoExistenteNoBanco == True:
         for alimento in alimentos:
             if alimento["nome"] == nomeAlimento:
-                alimentoBuscado.append(alimento["nome"])
+                item = {
+                    "usuario": nomeUsuario,
+                    "alimento": nomeAlimento
+                }
+                alimentoBuscado.append(item)
                 print("|                                        |")
                 print("|     Nome : ",alimento["nome"])
                 print("|     Categoria : ", alimento["categoria"])
@@ -312,8 +401,9 @@ def telaHome(usr): # dicionario do usuario que acessou
         opcao = input("\nO que deseja fazer?\n")
 
         if opcao == "1":
+            os.system(limparTela)
             nomeAlimento = input("Informe o nome do alimento que deseja buscar: \n")
-            buscarAlimento(usr["usuario"],nomeAlimento)
+            buscarAlimento(usr,nomeAlimento)
         
         elif opcao == "2":
             listarAlimentosBuscados(usr)
@@ -372,17 +462,11 @@ def loginUsuario(usuario, senha):
         input("Pressione QUALQUER tecla para voltar a tela inicial\n")
          
 
-#uma função recursiva para validar o cadastro do usuario
 def validarCadastro(usuario):
     existe = False
     for usr in usuarios:
         if usuario == usr["usuario"]:
             existe = True
-    
-    if existe == True:
-        print("Já existe alguém cadastrado com esse nome de usuário, tente outro...")
-        usuario = input("Informe um novo nome de usuário: ")
-        validarCadastro(usuario)
 
     return existe #false
 
@@ -390,28 +474,33 @@ def validarCadastro(usuario):
 
 def CadastrarUsuario(nome, usuario, senha):
 
-    cadastrado = validarCadastro(usuario)
-    if cadastrado == False:
+    jaCadastrado = True
+    while jaCadastrado == True:
+        jaCadastrado = validarCadastro(usuario)
+        if jaCadastrado == True:
+            print("Já existe alguém cadastrado com esse nome de usuário, tente outro...")
+            usuario = input("Informe um novo nome de usuário: ")
+    
+    if jaCadastrado == False:
         print("Cadastrando usuario...")
         time.sleep(1)
+
     user = {
         "nome": nome,
         "usuario": usuario,
         "senha": senha
     }
-
+    
     usuarios.append(user)
-    with open(arquivoUsuarios, "a") as f:
-        f.write(f"{user['nome']},{user['usuario']},{user['senha']}\n")
-    
     # verificar se ocorreu tudo bem ao gravar no arquivo
-    
+    adicionarUsuario(user)
     return "Usuario cadastrado com sucesso" 
 
 
 # loop principal
 def main():
-
+    carregarUsuarios()
+    carregarPedidos()
     while True: 
         opcao = 0
         os.system(limparTela)
