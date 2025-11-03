@@ -14,6 +14,7 @@ if os.name == "nt":
     limparTela = "cls"
 else:
     limparTela = "clear"
+
 tempoLongo = 0.7
 tempoCurto = 0.3
 
@@ -391,7 +392,6 @@ def telaHome(usr): # dicionario do usuario que acessou(que tem o acesso)
         if opcao == "1":
             os.system(limparTela)
             nomeAlimento = input("Informe o nome do alimento que deseja buscar: \n")
-            os.system(tempoLongo)
             buscarAlimento(usr,nomeAlimento)
         
         elif opcao == "2":
