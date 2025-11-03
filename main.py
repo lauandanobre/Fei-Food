@@ -10,7 +10,7 @@ usuariosArq = "usuarios.txt"
 pedidosArq = "pedidos.json"
 
 #limparTela = "clear"
-if os.name == "nt":  # Windows
+if os.name == "nt":
     limparTela = "cls"
 else:
     limparTela = "clear"
@@ -37,24 +37,24 @@ def carregarUsuarios():
     #print(usuarios)
     arquivo.close()
 
-# carregarUsuarios()
 
 def carregarPedidos():
-    global pedidos
+    global pedidosDoUsuario
     if not os.path.exists(pedidosArq):
-        with open(pedidosArq, "w") as f:
-            json.dump([], f)
-    with open(pedidosArq, "r") as arquivo:
-        try:
-            pedidos = json.load(arquivo)
-        except json.JSONDecodeError:
-            pedidos = []
+        arquivo = open(pedidosArq, "w")
+        json.dump([], arquivo)
+        arquivo.close()
 
-# carregarPedidos()
+    arquivo = open(pedidosArq, "r")
+    pedidosDoUsuario = json.load(arquivo)
+    arquivo.close()
+
+
 
 def salvarPedidos():
-    with open(pedidosArq, "w") as arquivo:
-        json.dump(pedidos, arquivo, indent=4)
+    arquivo = open(pedidosArq, "w")
+    json.dump(pedidos, arquivo, indent=4)
+    arquivo.close()    
 
 def adicionarPedido(ped):
     pedidos.append(ped)
