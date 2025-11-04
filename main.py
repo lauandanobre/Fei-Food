@@ -124,6 +124,12 @@ def mostrarPedidos(usr):
             print("------------------------------------")
             print("ID: ", pedido["id"])
             print("Itens:")
+            for item in pedido["itens"]:
+                # string ou dicionario
+                if isinstance(item, dict):  
+                    print(f" - {item['nome']} (R$ {item['preco']})")
+                else:
+                    print(f" - {item}")
             print("Total: R$", pedido["total"])
             print("Avaliação:", pedido.get("avaliacao", "Não avaliado"))
     
