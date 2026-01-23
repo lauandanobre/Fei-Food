@@ -38,18 +38,16 @@ def carregarUsuarios():
     #print(usuarios)
     arquivo.close()
 
-
 def carregarPedidos():
-    global pedidosDoUsuario
+    global pedidos
     if not os.path.exists(pedidosArq):
         arquivo = open(pedidosArq, "w")
         json.dump([], arquivo)
         arquivo.close()
 
     arquivo = open(pedidosArq, "r")
-    pedidosDoUsuario = json.load(arquivo)
+    pedidos = json.load(arquivo)
     arquivo.close()
-
 
 
 def salvarPedidos():
@@ -67,10 +65,6 @@ def adicionarUsuario(usr):
     arquivo.write(f"{usr['nome']},{usr['usuario']},{usr['senha']}\n")
     arquivo.close()
 
-def adicionarPedido(ped):
-    arquivo = open(pedidosArq, "a")
-    arquivo.write(f"{ped['id']};{ped['usuario']};{ped['itens']};{ped['total']};{ped['avaliacao']}\n")
-    arquivo.close()
 
 def telaInicio():
     print(" ________________________________________ ")
@@ -124,12 +118,7 @@ def mostrarPedidos(usr):
             print("------------------------------------")
             print("ID: ", pedido["id"])
             print("Itens:")
-            for item in pedido["itens"]:
-                # string ou dicionario
-                if isinstance(item, dict):  
-                    print(f" - {item['nome']} (R$ {item['preco']})")
-                else:
-                    print(f" - {item}")
+            print(pedido["itens"])
             print("Total: R$", pedido["total"])
             print("Avaliação:", pedido.get("avaliacao", "Não avaliado"))
     
@@ -150,16 +139,15 @@ def verificarSePossuiPedidos(usr):
         if pedido["usuario"] == usr["usuario"]:
             return True
     return False
-
 def editarPedido(usr):
     os.system(limparTela)
     encontrado = False
-    v = verificarSePossuiPedidos(usr)
-    if v == False:
+    if not verificarSePossuiPedidos(usr):
         return "Você não possui pedidos para editar."
 
     mostrarPedidos(usr)
     idPedido = input("Informe o ID do pedido que deseja editar: ")
+
     for pedido in pedidos:
         if pedido["id"] == int(idPedido) and pedido["usuario"] == usr["usuario"]:
             encontrado = True
@@ -167,31 +155,33 @@ def editarPedido(usr):
             print("2) Remover item")
             print("3) Voltar")
             decisao = input("Escolha a opção: ")
+
             if decisao == "1":
-                time.sleep(tempoCurto)
                 novoItem = input("Informe o alimento a adicionar: ")
-                existe = verificarSeAlimentoExisteNoBanco(novoItem)
-                if existe == True:
+                if verificarSeAlimentoExisteNoBanco(novoItem):
+                    pedido["itens"].append(novoItem)
                     for alimento in alimentos:
                         if alimento["nome"] == novoItem:
-                            pedido["itens"].append(alimento)
                             pedido["total"] += alimento["preco"]
-                            salvarPedidos()
-                            print("Item adicionado com sucesso!")
-                            break
-                            
+                    salvarPedidos()
+                    return "Item adicionado com sucesso!"
+                else:
+                    return "Alimento não encontrado no banco de dados."
+
             elif decisao == "2":
-                time.sleep(tempoCurto)
                 removerItem = input("Informe o alimento a remover: ")
-                for item in pedido["itens"]:
-                    if item["nome"] == removerItem:
-                        pedido["total"] -= item["preco"]
-                        pedido["itens"].remove(item)
-                        salvarPedidos()
-                        print("Item removido com sucesso!")
-                        break
-            
-    if encontrado == False:
+                if removerItem in pedido["itens"]:
+                    pedido["itens"].remove(removerItem)
+                    for alimento in alimentos:
+                        if alimento["nome"] == removerItem:
+                            pedido["total"] -= alimento["preco"]
+                    salvarPedidos()
+                    return "Item removido com sucesso!"
+                else:
+                    return "Esse alimento não está no pedido."
+            break
+
+    if not encontrado:
         return "Pedido não encontrado."
 
 def excluirPedido(usr):
@@ -259,6 +249,16 @@ def adicionarItensAoPedido(itens,nomeAlimento):
     time.sleep(tempoCurto)
     print(nomeAlimento," adicionado(a) ao seu pedido.")
 
+def gerarNovoId():
+    if not pedidos: 
+        return 1
+    else:
+        maior_id = 0
+        for ped in pedidos:
+            if ped["id"] > maior_id:
+                maior_id = ped["id"]
+        return maior_id + 1
+    
 def cadastrarPedido(usr):
     os.system(limparTela)
     pedidoFinalizado = False
@@ -288,7 +288,10 @@ def cadastrarPedido(usr):
                             totalPedido += alimento["preco"]
 
                 # Define ID do pedido
-                idPedido = len(pedidos) + 1
+                
+                idPedido = gerarNovoId()
+                print(idPedido)
+
 
                 # Cria dicionário do pedido
                 novoPedido = {
