@@ -1,5 +1,4 @@
-# Um software python de terminal que busca ser uma pequena
-# versão funcional do ifood
+# Um software python de terminal que tem como objetivo ser uma pequena versão funcional e não tão complexa do ifood
 
 import os
 import time
